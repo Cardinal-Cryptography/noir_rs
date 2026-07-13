@@ -1,5 +1,3 @@
-use std::sync::Once;
-
 use barretenberg_rs::{
     BarretenbergApi,
     backends::FfiBackend,
