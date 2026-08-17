@@ -11,6 +11,14 @@ use crate::backends::barretenberg::{
 };
 use crate::{witness, circuit};
 
+/// Barretenberg only honors the first SRS initialization of the process (see
+/// `setup_srs`), and all tests here share one process. Initialize the SRS once,
+/// large enough for the biggest circuit under test (keccak: dyadic size 65536);
+/// later `setup_srs*` calls for smaller sizes are no-ops.
+fn setup_test_srs() {
+    setup_srs(65536, None).unwrap();
+}
+
 #[test]
 fn test_circuit_stats() {
     // Read the JSON manifest of the circuit
@@ -21,8 +29,8 @@ fn test_circuit_stats() {
     let (_, constraint_system_buf) = circuit::decode_circuit(product_circuit_bytecode).unwrap();
     let settings = settings_ultra_honk_poseidon2();
     let info = api::circuit_stats(&constraint_system_buf, &settings).unwrap();
-    assert_eq!(info.num_gates, 36);
-    assert_eq!(info.num_gates_dyadic, 64);
+    assert_eq!(info.num_gates, 19);
+    assert_eq!(info.num_gates_dyadic, 32);
 }
 
 #[test]
@@ -35,7 +43,7 @@ fn test_prove_and_verify_ultra_honk() {
     let product_circuit_bytecode = product_circuit["bytecode"].as_str().unwrap();
 
     // Setup SRS
-    setup_srs(512, None).unwrap();
+    setup_test_srs();
 
     // Get the witness map from the vector of field elements
     let initial_witness = witness::from_vec_to_witness_map(vec![5_u128, 6_u128, 30_u128]).unwrap();
@@ -61,7 +69,7 @@ fn test_ultra_honk_keccak() {
     let keccak_circuit_bytecode = keccak_circuit["bytecode"].as_str().unwrap();
 
     // Setup SRS
-    setup_srs_from_bytecode(keccak_circuit_bytecode, None, false).unwrap();
+    setup_test_srs();
 
     // Get the witness map from the vector of field elements
     let initial_witness = witness::from_vec_to_witness_map(vec![2_u128, 5_u128, 10_u128, 15_u128, 20_u128]).unwrap();
@@ -108,6 +116,8 @@ fn test_ultra_honk_low_memory() {
 #[test]
 fn test_srs_setup_from_bytecode() {
     let _ = tracing_subscriber::fmt::try_init();
+    setup_test_srs();
+
     // Read the JSON manifest of the circuit
     let product_circuit_txt = std::fs::read_to_string("circuits/target/product.json").unwrap();
     let product_circuit: serde_json::Value = serde_json::from_str(&product_circuit_txt).unwrap();
@@ -116,13 +126,14 @@ fn test_srs_setup_from_bytecode() {
     let start = std::time::Instant::now();
     let srs = setup_srs_from_bytecode(product_circuit_bytecode, None, false).unwrap();
     info!("srs setup time: {:?}", start.elapsed());
-    // 2^6 + 1 = 65
-    assert_eq!(srs, 65);
+    // 2^5 + 1 = 33
+    assert_eq!(srs, 33);
 }
 
 #[test]
 fn test_srs_setup_from_circuit_size() {
     let _ = tracing_subscriber::fmt::try_init();
+    setup_test_srs();
 
     let start = std::time::Instant::now();
     let circuit_size = 22;

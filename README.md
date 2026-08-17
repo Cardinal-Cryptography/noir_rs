@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-noir_rs = { git = "https://github.com/zkpassport/noir_rs.git", tag = "v1.0.0-beta.20-1" }
+noir_rs = { git = "https://github.com/zkpassport/noir_rs.git", tag = "v1.0.0-beta.22-1" }
 ```
 
 If you want to use `Barretenberg` as backend for proving and verifying proofs, you need to set the
@@ -33,7 +33,7 @@ If you want to use `Barretenberg` as backend for proving and verifying proofs, y
 
 ```toml
 [dependencies]
-noir_rs = { git = "https://github.com/zkpassport/noir_rs.git", tag = "v1.0.0-beta.20-1", features = ["barretenberg"] }
+noir_rs = { git = "https://github.com/zkpassport/noir_rs.git", tag = "v1.0.0-beta.22-1", features = ["barretenberg"] }
 ```
 
 ## Usage
@@ -58,6 +58,9 @@ setup_srs_from_bytecode(BYTECODE, None, false).unwrap();
 // Alternatively, if you know the circuit size, you can use the following function
 // Assuming the circuit size is 40 here
 setup_srs(40, None).unwrap();
+// Note: barretenberg only honors the first SRS initialization of the process,
+// so if you prove multiple circuits, set up the SRS once with the largest one
+// (calls for smaller sizes afterwards are no-ops, larger ones return an error)
 
 // Set up your witness
 // a = 5, b = 6, res = a * b = 30
